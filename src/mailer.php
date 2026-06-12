@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
 
 /**
  * Sends a notification email to NOTIFY_EMAIL via SMTP (PHPMailer),
  * falling back to PHP mail() when SMTP_HOST is not configured.
  * Failures are logged, never thrown — a broken mailer must not stop the checks.
+ * With $debug, the full SMTP conversation is printed (for tools/test-mail.php).
  */
-function send_notification(string $subject, string $body): bool
+function send_notification(string $subject, string $body, bool $debug = false): bool
 {
     $to = env("NOTIFY_EMAIL", "hassan.domedenea@gmail.com");
     if (!$to) {
@@ -32,6 +34,9 @@ function send_notification(string $subject, string $body): bool
 
         $mail = new PHPMailer(true);
         $mail->isSMTP();
+        if ($debug) {
+            $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+        }
         $mail->Host = $host;
         $mail->Timeout = 5;
         $mail->Port = (int) env("SMTP_PORT", "587");
