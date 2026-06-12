@@ -152,7 +152,9 @@ function duration(string $start, ?string $end): string
                         <?= $label ?>
                     </span>
                 </div>
-                <p class="text-sm text-slate-500 mb-2"><?= $e(
+                <p class="text-sm text-slate-500 mb-2" title="<?= $e(
+                        $url,
+                ) ?>" ><?= $e(
                     $ep["description"],
                 ) ?></p>
                 <p class="text-xs text-slate-400 truncate" title="<?= $e(
