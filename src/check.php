@@ -48,7 +48,7 @@ function run_checks(): array
             $db->prepare(
                 "INSERT INTO events (endpoint, started_at, description) VALUES (?, ?, ?)",
             )->execute([$url, $time, "Unreachable"]);
-            $sent = send_notification(
+            $sent = notify(
                 sprintf("🔴 DOWN: %s", $endpoint["name"]),
                 sprintf(
                     "Endpoint is unreachable.\n\nName: %s\nURL: %s\nDetail: %s\nSince: %s (%s)",
@@ -59,12 +59,12 @@ function run_checks(): array
                     app_timezone()->getName(),
                 ),
             );
-            $action = "event_opened, email " . ($sent ? "sent" : "FAILED");
+            $action = "event_opened, " . describe_notify($sent);
         } elseif ($up && $openEvent) {
             $db->prepare(
                 "UPDATE events SET resolved_at = ? WHERE id = ?",
             )->execute([$time, $openEvent["id"]]);
-            $sent = send_notification(
+            $sent = notify(
                 sprintf("🟢 RESOLVED: %s", $endpoint["name"]),
                 sprintf(
                     "Endpoint is reachable again.\n\nName: %s\nURL: %s\nDown since: %s\nResolved at: %s\nTimezone: %s",
@@ -75,7 +75,7 @@ function run_checks(): array
                     app_timezone()->getName(),
                 ),
             );
-            $action = "event_resolved, email " . ($sent ? "sent" : "FAILED");
+            $action = "event_resolved, " . describe_notify($sent);
         }
 
         $results[] = [

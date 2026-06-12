@@ -63,3 +63,73 @@ function send_notification(string $subject, string $body, bool $debug = false): 
         return false;
     }
 }
+
+/**
+ * Sends a message to the Telegram channel configured in .env.
+ * With $debug, the raw Bot API response is printed.
+ */
+function send_telegram(string $text, bool $debug = false): bool
+{
+    $token = env("TELEGRAM_BOT_TOKEN", "");
+    $chatId = env("TELEGRAM_CHAT_ID", "");
+    if ($token === "" || $chatId === "") {
+        error_log("[monitor] telegram failed: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set");
+        return false;
+    }
+
+    $ch = curl_init("https://api.telegram.org/bot{$token}/sendMessage");
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query(["chat_id" => $chatId, "text" => $text]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+
+    if ($debug) {
+        echo "Telegram API response (HTTP {$code}): " . ($response === false ? $error : $response) . "\n";
+    }
+
+    if ($response === false || $code !== 200) {
+        error_log("[monitor] telegram failed: HTTP {$code} " . ($response === false ? $error : $response));
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Dispatches a notification to every enabled channel (email, Telegram).
+ * Returns ['email' => bool, 'telegram' => bool] for the channels that ran.
+ */
+function notify(string $subject, string $body): array
+{
+    $results = [];
+    if (env_bool("MAIL_ENABLED", true)) {
+        $results["email"] = send_notification($subject, $body);
+    }
+    if (env_bool("TELEGRAM_ENABLED", false)) {
+        $results["telegram"] = send_telegram($subject . "\n\n" . $body);
+    }
+
+    return $results;
+}
+
+/**
+ * Human-readable summary of a notify() result for logs/job output.
+ */
+function describe_notify(array $results): string
+{
+    if (!$results) {
+        return "notifications disabled";
+    }
+
+    $parts = [];
+    foreach ($results as $channel => $ok) {
+        $parts[] = $channel . " " . ($ok ? "sent" : "FAILED");
+    }
+
+    return implode(", ", $parts);
+}

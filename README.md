@@ -39,8 +39,10 @@ or via HTTP (uses `CRON_SECRET` from `.env`):
 
 - `job.php` GETs each endpoint (timeout `CHECK_TIMEOUT`, default 10s). Up = HTTP status < 400.
 - `statuses` table holds the latest state per endpoint; `events` records outages (`started_at` / `resolved_at`, description `Unreachable`).
-- A new outage opens one event and sends a DOWN email; recovery resolves the open event and sends a RESOLVED email. Notifications go to `NOTIFY_EMAIL`.
-- Email uses SMTP via PHPMailer when `SMTP_HOST` is set, otherwise falls back to PHP `mail()`.
+- A new outage opens one event and sends a DOWN notification; recovery resolves the open event and sends a RESOLVED notification.
+- Notification channels (each independently toggleable in `.env`):
+  - **Email** (`MAIL_ENABLED`, default on): to `NOTIFY_EMAIL` via SMTP/PHPMailer when `SMTP_HOST` is set, otherwise PHP `mail()`. Test with `php tools/test-mail.php`.
+  - **Telegram** (`TELEGRAM_ENABLED`, default off): posts to a channel via a bot. Create a bot with [@BotFather](https://t.me/BotFather), add it as an admin of your private channel, set `TELEGRAM_BOT_TOKEN`, then run `php tools/test-telegram.php` — with `TELEGRAM_CHAT_ID` empty it lists the chat ids the bot can see; fill it in and run again to send a test message.
 - Dashboard (`public/index.php`) is protected by basic auth (`APP_USERNAME` / `APP_PASSWORD`, default `admin`/`admin`) and shows current statuses plus events from the last `EVENTS_DAYS` days (default 7; ongoing events always shown).
 - Timestamps are stored in UTC and displayed in `TIMEZONE` (default `Asia/Baghdad`) on the dashboard and in emails.
 

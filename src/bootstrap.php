@@ -107,6 +107,19 @@ function now(): string
 }
 
 /**
+ * Boolean .env value: true/1/yes/on (case-insensitive).
+ */
+function env_bool(string $key, bool $default): bool
+{
+    $value = env($key);
+    if ($value === null || $value === '') {
+        return $default;
+    }
+
+    return in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true);
+}
+
+/**
  * Display timezone from TIMEZONE in .env (default Asia/Baghdad).
  */
 function app_timezone(): DateTimeZone
