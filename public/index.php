@@ -157,7 +157,7 @@ function duration(string $start, ?string $end): string
                 ) ?></p>
                 <p class="text-xs text-slate-400 truncate" title="<?= $e(
                     $url,
-                ) ?>"><?= $e($url) ?></p>
+                ) ?>" hidden><?= $e($url) ?></p>
                 <p class="text-xs text-slate-400 mt-2">
                     Last check: <?= $st
                         ? $e(local_time($st["last_update"]))
