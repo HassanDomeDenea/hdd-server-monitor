@@ -1,0 +1,19 @@
+services:
+  monitor:
+    build: .
+    image: hdd-server-monitor
+    container_name: hdd-server-monitor
+    restart: unless-stopped
+    volumes:
+      - ./.env:/var/www/html/.env
+      - ./config/endpoints.json:/var/www/html/config/endpoints.json
+      - ./data:/var/www/html/data
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    # Set this to the docker network nginx proxy manager is attached to
+    # (find it with: docker network ls)
+    name: npm_default

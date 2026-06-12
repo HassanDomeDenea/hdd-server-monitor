@@ -21,7 +21,29 @@ Edit `config/endpoints.json`:
 ]
 ```
 
-## Cron (every minute)
+## Docker deployment (e.g. behind nginx proxy manager)
+
+The image bundles Apache (serving `public/`, `.htaccess` honored) and an internal
+cron that runs the checks every minute — no host cron and no published ports needed.
+
+```bash
+cp .env.example .env          # then edit credentials/notifications
+docker compose up -d --build
+```
+
+Notes:
+
+- `docker-compose.yml` joins an external network (`name: npm_default` by default) —
+  set it to the network your nginx proxy manager runs on (`docker network ls`).
+  In NPM, create a proxy host pointing to hostname `hdd-server-monitor`, port `80`.
+- `.env`, `config/endpoints.json`, and `data/` are bind-mounted: edit endpoints or
+  settings on the host and they apply immediately, no rebuild. The SQLite db
+  persists in `./data`.
+- The last cron run's output is written to `data/last-job.log`.
+- Debug tools work inside the container, e.g.
+  `docker exec -it hdd-server-monitor php tools/test-telegram.php`.
+
+## Cron (every minute, non-Docker setups)
 
 Either via CLI:
 

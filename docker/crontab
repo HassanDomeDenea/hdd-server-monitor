@@ -1,0 +1,3 @@
+# Run as www-data so the sqlite db stays writable by the web ui too.
+# Last run's output is kept in data/last-job.log for inspection.
+* * * * * www-data /usr/local/bin/php /var/www/html/public/job.php > /var/www/html/data/last-job.log 2>&1
