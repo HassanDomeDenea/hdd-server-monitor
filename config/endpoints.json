@@ -1,27 +1,27 @@
 [
-  {
-    "name": "Home Page",
-    "url": "https://hdd-clinic.com",
-    "description": "HDD Clinic Home Page"
-  },
-  {
-    "name": "APP (MAIN)",
-    "url": "https://main.hdd-clinic.com/api/general@up2",
-    "description": "HDD Clinic App Server - Main"
-  },
-  {
-    "name": "APP (SRV2)",
-    "url": "https://srv2.hdd-clinic.com/api/general@up",
-    "description": "HDD Clinic App Server - Server 2"
-  },
-  {
-    "name": "APP (SRV3)",
-    "url": "https://srv3.hdd-clinic.com/api/general@up",
-    "description": "HDD Clinic App Server - Server 3"
-  },
-  {
-    "name": "APP (CENTRAL)",
-    "url": "https://srv-central.hdd-clinic.com/api/general@up",
-    "description": "HDD Clinic App Server - Central Server"
-  }
+    {
+        "name": "Home Page",
+        "url": "https://hdd-clinic.com/api/up",
+        "description": "HDD Clinic Home Page"
+    },
+    {
+        "name": "APP (MAIN)",
+        "url": "https://main.hdd-clinic.com/api/general@up",
+        "description": "HDD Clinic App Server - Main"
+    },
+    {
+        "name": "APP (SRV2)",
+        "url": "https://srv2.hdd-clinic.com/api/general@up",
+        "description": "HDD Clinic App Server - Server 2"
+    },
+    {
+        "name": "APP (SRV3)",
+        "url": "https://srv3.hdd-clinic.com/api/general@up",
+        "description": "HDD Clinic App Server - Server 3"
+    },
+    {
+        "name": "APP (CENTRAL)",
+        "url": "https://srv-central.hdd-clinic.com/api/general@up",
+        "description": "HDD Clinic App Server - Central Server"
+    }
 ]

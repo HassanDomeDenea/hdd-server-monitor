@@ -11,44 +11,50 @@ use PHPMailer\PHPMailer\PHPMailer;
  */
 function send_notification(string $subject, string $body): bool
 {
-    $to = env('NOTIFY_EMAIL', 'hassan.domedenea@gmail.com');
+    $to = env("NOTIFY_EMAIL", "hassan.domedenea@gmail.com");
     if (!$to) {
         return false;
     }
 
-    $from = env('SMTP_FROM', 'monitor@localhost');
-    $fromName = env('SMTP_FROM_NAME', 'Server Monitor');
-    $host = env('SMTP_HOST', '');
+    $from = env("SMTP_FROM", "monitor@localhost");
+    $fromName = env("SMTP_FROM_NAME", "Server Monitor");
+    $host = env("SMTP_HOST", "");
 
     try {
-        if ($host === '' || $host === null) {
-            $headers = sprintf("From: %s <%s>\r\nContent-Type: text/plain; charset=UTF-8", $fromName, $from);
+        if ($host === "" || $host === null) {
+            $headers = sprintf(
+                "From: %s <%s>\r\nContent-Type: text/plain; charset=UTF-8",
+                $fromName,
+                $from,
+            );
             return @mail($to, $subject, $body, $headers);
         }
 
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = $host;
-        $mail->Port = (int) env('SMTP_PORT', '587');
-        $mail->SMTPAuth = env('SMTP_USERNAME', '') !== '';
-        $mail->Username = env('SMTP_USERNAME', '');
-        $mail->Password = env('SMTP_PASSWORD', '');
-        $encryption = env('SMTP_ENCRYPTION', 'tls');
-        if ($encryption === 'tls') {
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        } elseif ($encryption === 'ssl') {
+        $mail->Timeout = 5;
+        $mail->Port = (int) env("SMTP_PORT", "587");
+        $mail->SMTPAuth = env("SMTP_USERNAME", "") !== "";
+        $mail->Username = env("SMTP_USERNAME", "");
+        $mail->Password = env("SMTP_PASSWORD", "");
+        $encryption = env("SMTP_ENCRYPTION", "tls");
+        // Port 465 is implicit SSL; STARTTLS there hangs waiting for a greeting
+        if ($mail->Port === 465 || $encryption === "ssl") {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } elseif ($encryption === "tls") {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         }
         $mail->setFrom($from, $fromName);
         $mail->addAddress($to);
         $mail->Subject = $subject;
         $mail->Body = $body;
-        $mail->CharSet = 'UTF-8';
+        $mail->CharSet = "UTF-8";
         $mail->send();
 
         return true;
     } catch (Throwable $e) {
-        error_log('[monitor] mail failed: ' . $e->getMessage());
+        error_log("[monitor] mail failed: " . $e->getMessage());
         return false;
     }
 }

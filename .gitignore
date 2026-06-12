@@ -1,4 +1,5 @@
 /vendor/
 /.env
 /data/*
+/.idea
 !/data/.gitkeep

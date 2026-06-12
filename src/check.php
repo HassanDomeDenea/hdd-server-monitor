@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/bootstrap.php';
-require_once __DIR__ . '/mailer.php';
+require_once __DIR__ . "/bootstrap.php";
+require_once __DIR__ . "/mailer.php";
 
 /**
  * Checks every configured endpoint, updates the statuses table and
@@ -12,60 +12,78 @@ require_once __DIR__ . '/mailer.php';
 function run_checks(): array
 {
     $db = db();
-    $timeout = (int) env('CHECK_TIMEOUT', '10');
+    $timeout = (int) env("CHECK_TIMEOUT", "10");
     $results = [];
+    $endpoints = endpoints();
 
-    foreach (endpoints() as $url => $endpoint) {
+    // Endpoints removed from config: drop their status rows and close any
+    // open events, otherwise those events stay "ongoing" forever.
+    if ($endpoints) {
+        $urls = array_keys($endpoints);
+        $in = implode(",", array_fill(0, count($urls), "?"));
+        $db->prepare("DELETE FROM statuses WHERE endpoint NOT IN ($in)")->execute($urls);
+        $db->prepare(
+            "UPDATE events SET resolved_at = ?, description = description || ' (endpoint removed from config)'
+            WHERE resolved_at IS NULL AND endpoint NOT IN ($in)",
+        )->execute([now(), ...$urls]);
+    }
+
+    foreach ($endpoints as $url => $endpoint) {
         [$up, $detail] = check_url($url, $timeout);
         $time = now();
 
-        $db->prepare('INSERT INTO statuses (endpoint, status, last_update) VALUES (?, ?, ?)
-            ON CONFLICT(endpoint) DO UPDATE SET status = excluded.status, last_update = excluded.last_update')
-            ->execute([$url, $up ? 'up' : 'down', $time]);
+        $db->prepare(
+            'INSERT INTO statuses (endpoint, status, last_update) VALUES (?, ?, ?)
+            ON CONFLICT(endpoint) DO UPDATE SET status = excluded.status, last_update = excluded.last_update',
+        )->execute([$url, $up ? "up" : "down", $time]);
 
-        $stmt = $db->prepare('SELECT * FROM events WHERE endpoint = ? AND resolved_at IS NULL ORDER BY started_at DESC LIMIT 1');
+        $stmt = $db->prepare(
+            "SELECT * FROM events WHERE endpoint = ? AND resolved_at IS NULL ORDER BY started_at DESC LIMIT 1",
+        );
         $stmt->execute([$url]);
         $openEvent = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $action = 'none';
+        $action = "none";
         if (!$up && !$openEvent) {
-            $db->prepare('INSERT INTO events (endpoint, started_at, description) VALUES (?, ?, ?)')
-                ->execute([$url, $time, 'Unreachable']);
-            $action = 'event_opened';
-            send_notification(
-                sprintf('🔴 DOWN: %s', $endpoint['name']),
+            $db->prepare(
+                "INSERT INTO events (endpoint, started_at, description) VALUES (?, ?, ?)",
+            )->execute([$url, $time, "Unreachable"]);
+            $sent = send_notification(
+                sprintf("🔴 DOWN: %s", $endpoint["name"]),
                 sprintf(
                     "Endpoint is unreachable.\n\nName: %s\nURL: %s\nDetail: %s\nSince: %s (%s)",
-                    $endpoint['name'],
+                    $endpoint["name"],
                     $url,
                     $detail,
                     local_time($time),
-                    app_timezone()->getName()
-                )
+                    app_timezone()->getName(),
+                ),
             );
+            $action = "event_opened, email " . ($sent ? "sent" : "FAILED");
         } elseif ($up && $openEvent) {
-            $db->prepare('UPDATE events SET resolved_at = ? WHERE id = ?')
-                ->execute([$time, $openEvent['id']]);
-            $action = 'event_resolved';
-            send_notification(
-                sprintf('🟢 RESOLVED: %s', $endpoint['name']),
+            $db->prepare(
+                "UPDATE events SET resolved_at = ? WHERE id = ?",
+            )->execute([$time, $openEvent["id"]]);
+            $sent = send_notification(
+                sprintf("🟢 RESOLVED: %s", $endpoint["name"]),
                 sprintf(
                     "Endpoint is reachable again.\n\nName: %s\nURL: %s\nDown since: %s\nResolved at: %s\nTimezone: %s",
-                    $endpoint['name'],
+                    $endpoint["name"],
                     $url,
-                    local_time($openEvent['started_at']),
+                    local_time($openEvent["started_at"]),
                     local_time($time),
-                    app_timezone()->getName()
-                )
+                    app_timezone()->getName(),
+                ),
             );
+            $action = "event_resolved, email " . ($sent ? "sent" : "FAILED");
         }
 
         $results[] = [
-            'endpoint' => $url,
-            'name' => $endpoint['name'],
-            'status' => $up ? 'up' : 'down',
-            'detail' => $detail,
-            'action' => $action,
+            "endpoint" => $url,
+            "name" => $endpoint["name"],
+            "status" => $up ? "up" : "down",
+            "detail" => $detail,
+            "action" => $action,
         ];
     }
 
@@ -86,7 +104,7 @@ function check_url(string $url, int $timeout): array
         CURLOPT_MAXREDIRS => 5,
         CURLOPT_TIMEOUT => $timeout,
         CURLOPT_CONNECTTIMEOUT => $timeout,
-        CURLOPT_USERAGENT => 'hdd-server-monitor/1.0',
+        CURLOPT_USERAGENT => "hdd-server-monitor/1.0",
     ]);
     curl_exec($ch);
     $errno = curl_errno($ch);
@@ -94,8 +112,8 @@ function check_url(string $url, int $timeout): array
     $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
 
     if ($errno !== 0) {
-        return [false, $error ?: ('cURL error ' . $errno)];
+        return [false, $error ?: "cURL error " . $errno];
     }
 
-    return [$code < 400, 'HTTP ' . $code];
+    return [$code < 400, "HTTP " . $code];
 }
