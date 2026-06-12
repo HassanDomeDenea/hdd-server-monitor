@@ -1,0 +1,18 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "monitor",
+            "runtimeExecutable": "C:\\Users\\hassa\\.config\\herd\\bin\\php85\\php.exe",
+            "runtimeArgs": [
+                "-c",
+                "C:\\Users\\hassa\\.config\\herd\\bin\\php85\\php.ini",
+                "-S",
+                "127.0.0.1:8770",
+                "-t",
+                "public"
+            ],
+            "port": 8770
+        }
+    ]
+}
