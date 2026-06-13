@@ -53,7 +53,8 @@ function db(): PDO
         $pdo->exec('CREATE TABLE IF NOT EXISTS statuses (
             endpoint TEXT PRIMARY KEY,
             status TEXT NOT NULL,
-            last_update TEXT NOT NULL
+            last_update TEXT NOT NULL,
+            fail_count INTEGER NOT NULL DEFAULT 0
         )');
         $pdo->exec('CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +63,12 @@ function db(): PDO
             resolved_at TEXT,
             description TEXT
         )');
+
+        // Migration: add fail_count to statuses tables created before it existed.
+        $cols = $pdo->query('PRAGMA table_info(statuses)')->fetchAll(PDO::FETCH_COLUMN, 1);
+        if (!in_array('fail_count', $cols, true)) {
+            $pdo->exec('ALTER TABLE statuses ADD COLUMN fail_count INTEGER NOT NULL DEFAULT 0');
+        }
     }
 
     return $pdo;

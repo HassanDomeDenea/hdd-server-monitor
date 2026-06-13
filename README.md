@@ -60,6 +60,7 @@ or via HTTP (uses `CRON_SECRET` from `.env`):
 ## How it works
 
 - `job.php` GETs each endpoint (timeout `CHECK_TIMEOUT`, default 10s). Up = HTTP status < 400.
+- An endpoint is only declared down (and alerted) after `FAILURE_THRESHOLD` consecutive failed checks (default 2), so a single one-minute network blip is ignored. `CHECK_RETRIES` (default 0) adds immediate in-run retries before a probe counts as failed.
 - `statuses` table holds the latest state per endpoint; `events` records outages (`started_at` / `resolved_at`, description `Unreachable`).
 - A new outage opens one event and sends a DOWN notification; recovery resolves the open event and sends a RESOLVED notification.
 - Notification channels (each independently toggleable in `.env`):
